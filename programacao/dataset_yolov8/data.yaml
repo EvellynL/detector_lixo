@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['GLASS', 'METAL', 'PAPER']
+
+roboflow:
+  workspace: garbarge-detection
+  project: trash-detector-xvu2c
+  version: 4
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/garbarge-detection/trash-detector-xvu2c/dataset/4
