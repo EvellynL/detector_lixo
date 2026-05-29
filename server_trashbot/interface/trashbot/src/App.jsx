@@ -1,10 +1,57 @@
-import { useState } from 'react'
 import './App.css'
 import logoReciclagem from './assets/reciclagem.png'
 import ImgDeteccao from './assets/deteccao.png'
+import { useEffect, useState } from 'react'
 
 function App() {
-  const [count, setCount] = useState(0)
+
+  const [status, setStatus] = useState('Conectando...');
+
+  const [latestImage, setLatestImage] = useState('');
+
+  const[latestImageTime, setLatestImageTime] = useState('--.--.--');
+
+  const [systemStatus, setSystemStatus] = useState('');
+
+  const [logs, setLogs] = useState([]);
+
+  const[counts, setCounts] = useState({
+    PAPER: 0,
+    METAL: 0,
+    GLASS: 0,
+  });
+
+  async function getStatus(){
+    try{
+      const response = await fetch('http://localhost:3000/api/status');
+      
+      const data = await response.json();
+
+      if(data.conectado){
+        setStatus('Conectado');
+      }else{
+        setStatus('Aguardando conexão...');
+      }
+      setCounts(data.contadores);
+      setLatestImage(data.latestImage);
+      setLatestImageTime(data.latestImageTime);
+      setLogs(data.logs);
+
+      console.log("JSON COMPLETO:", data);
+      console.log("SYSTEM STATUS RECEBIDO:", data.systemStatus);
+
+      setSystemStatus(data.systemStatus);
+    }
+    catch {
+      setStatus('servidor offline');
+    }
+  }
+
+  useEffect(() => {
+    getStatus();
+    const interval = setInterval(getStatus, 1000);
+    return () => clearInterval(interval);
+  },[]);
 
   return (
     <>
@@ -20,9 +67,24 @@ function App() {
         {/* Bloco 1: Status do Sistema */}
         <section className="card status-card">
           <h3>SYSTEM STATUS</h3>
-          <h2>STATUS: AGUARDANDO ITEM</h2>
-          <p>Raspberry Pi: <span>Conectado</span></p>
-          <p>Última Foto: 14:05:31</p>
+          <h2>STATUS: {systemStatus}</h2>
+          <p>Raspberry Pi:   <span
+            style={{
+
+              color:
+                status === 'Conectado'
+                  ? 'limegreen'
+                  : status === 'Aguardando conexão...'
+                  ? 'red'
+                  : 'gray',
+
+              fontWeight: 'bold'
+
+            }}
+          >
+            {status}
+          </span></p>
+          <p>Última Foto: {latestImageTime}</p>
         </section>
 
         {/* Bloco 2: Totais de Detecção */}
@@ -31,9 +93,9 @@ function App() {
           <h2>ITENS DETECTADOS</h2>
           {/* Aqui dentro você colocará seus gráficos/barras depois */}
           <div className="classes-container">
-            <div id='paper' className="card-trash">Papel: 20</div>
-            <div id='metal' className="card-trash">Metal: 30</div>
-            <div id='glass' className="card-trash">Vidro: 10</div>
+            <div id='paper' className="card-trash">Papel: {counts.PAPER}</div>
+            <div id='metal' className="card-trash">Metal: {counts.METAL}</div>
+            <div id='glass' className="card-trash">Vidro: {counts.GLASS}</div>
           </div>
         </section>
 
@@ -41,17 +103,35 @@ function App() {
         <section className="card feed-card">
           <h3>LIVE FEED</h3>
           <div className="video-placeholder">
-            <img src={ImgDeteccao} alt="Feed da Esteira" />
-          </div>
+
+              <img
+                key={latestImage}
+                src={`http://localhost:3000${latestImage}?t=${Date.now()}`}
+                alt="Feed da Esteira"
+                style={{
+                  width: '100%',
+                  height: '300px',
+                  objectFit: 'cover',
+                  border: '4px solid red'
+                }}
+              />
+
+            </div>
         </section>
 
         {/* Bloco 4: Log de Atividade */}
         <section className="card log-card">
           <h3>LOG DE ATIVIDADE</h3>
           <div className="log-container">
-            <p>[14:05:31] - Papel Detectado</p>
-            <p>[14:05:28] - Realizando Triagem - Metal</p>
-            <p>[14:05:25] - Item Triado</p>
+              {
+              logs.map((log, index) => (
+
+                <p key={index}>
+                  {log}
+                </p>
+
+              ))
+            }
           </div>
         </section>
 
