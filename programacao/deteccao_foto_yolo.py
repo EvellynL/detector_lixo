@@ -69,10 +69,10 @@ if r.boxes and len(r.boxes) > 0:
         angulo_servo1 = 90
     elif class_name == 'METAL':
         #lcd.write_string('     METAL')
-        angulo_servo1 = 180
+        angulo_servo1 = 0
     elif class_name == 'GLASS':
         #lcd.write_string('     VIDRO')
-        angulo_servo1 = 0
+        angulo_servo1 = 180
     else:
         #lcd.write_string(class_name)
         angulo_servo1 = None
@@ -89,7 +89,7 @@ if r.boxes and len(r.boxes) > 0:
 
         # 3. Servo 2 abre (180°) para empurrar o objeto
         print("Empurrando objeto (Servo 2 -> 180°)...")
-        mover_servo(pwm2, 180, tempo_movimento=0.6)
+        mover_servo(pwm2, 150, tempo_movimento=0.6)
         
         # 4. Aguarda o objeto cair/escorregar
         print("Aguardando 3 segundos com a rampa aberta...")
