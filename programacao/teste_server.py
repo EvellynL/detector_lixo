@@ -15,7 +15,7 @@ import RPi.GPIO as GPIO
 # CONFIGURAÇÕES
 # =====================================================
 
-MODEL_PATH = "runs/detect/train/weights/best_100epochs.pt"
+MODEL_PATH = "runs/detect/train5/weights/best.pt"
 
 WIDTH = 640
 HEIGHT = 640
@@ -25,7 +25,7 @@ IMGSZ = 320
 
 DETECTION_INTERVAL = 0.2  # segundos (5 inferências/s)
 
-SERVER = "192.169.38.77"
+SERVER = "192.168.0.101"
 
 CONNECT_URL = f"http://{SERVER}:3000/api/connect"
 CLASSIFICATION = f"http://{SERVER}:3000/api/classification"
@@ -235,6 +235,11 @@ while True:
             # -----------------------------------------
             # ENVIAR IMAGEM
             # -----------------------------------------
+
+            imagem_bgr = cv2.cvtColor(
+                            imagem,
+                            cv2.COLOR_RGB2BGR
+                            )
 
             ok, buffer = cv2.imencode(".jpg", imagem)
 

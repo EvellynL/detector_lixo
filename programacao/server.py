@@ -30,7 +30,7 @@ def mover_servo(pwm, angulo, tempo_movimento=0.6):
 pwm1.start(0)
 pwm2.start(0)
 
-SERVER = '192.169.38.77'
+SERVER = '192.169.0.101'
 
 CONNECT_URL = f'http://{SERVER}:3000/api/connect'
 CLASSIFICATION = f'http://{SERVER}:3000/api/classification'
@@ -66,7 +66,7 @@ def iniciar_triagem(ang: int):
         send_status('Triagem Finalizada!')
         time.sleep(0.6)
 
-model = YOLO('runs/detect/train/weights/best_100epochs.pt')
+model = YOLO('runs/detect/train5/weights/best.pt')
 path = 'programacao/dataset_yolov8/test/images'
 
 while True:
