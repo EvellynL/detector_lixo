@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 
 # 1. Configuração dos pinos do Raspberry Pi
-GPIO.setmode(GPIO.BCM)  # Usa o mapeamento Broadcom (GPIO xx) e não o número físico do pino
+GPIO.setmode(GPIO.BOARD)  # Usa o mapeamento Broadcom (GPIO xx) e não o número físico do pino
 GPIO_PINO_SERVO = 12    # GPIO 18 (Pino físico 12)
 
 GPIO.setup(GPIO_PINO_SERVO, GPIO.OUT)

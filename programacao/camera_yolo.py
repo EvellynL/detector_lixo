@@ -1,49 +1,146 @@
-import subprocess
-import numpy as np
 import cv2
+import threading
+import time
+
+from picamera2 import Picamera2
 from ultralytics import YOLO
 
-# ===== CONFIGURAÇÕES =====
-MODEL_PATH = "runs/detect/train/weights/best_100epochs.pt"
+# =============================
+# CONFIGURAÇÕES
+# =============================
+
+MODEL_PATH = "runs/detect/train5/weights/best.pt"
+
 WIDTH = 640
 HEIGHT = 480
 
-# ===== CARREGAR YOLO =====
-print("Carregando modelo YOLO...")
+CONF = 0.5
+IMGSZ = 320
+
+# =============================
+# CARREGA O YOLO
+# =============================
+
+print("Carregando modelo...")
+
 model = YOLO(MODEL_PATH)
 
-# ===== COMANDO DA CÂMERA =====
-cmd = [
-    "rpicam-vid",
-    "-t", "0",
-    "--inline",
-    "--codec", "yuv420",
-    "--width", str(WIDTH),
-    "--height", str(HEIGHT),
-    "-o", "-"
-]
+# =============================
+# CONFIGURA A CÂMERA
+# =============================
 
-pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE, bufsize=10**8)
+picam2 = Picamera2()
 
-print("Câmera iniciada. Pressione Q para sair.")
+config = picam2.create_video_configuration(
+    main={
+        "size": (WIDTH, HEIGHT),
+        "format": "RGB888"
+    },
+    buffer_count=4
+)
+
+picam2.configure(config)
+picam2.start()
+
+time.sleep(2)
+
+# =============================
+# THREAD DA CÂMERA
+# =============================
+
+frame = None
+running = True
+lock = threading.Lock()
+
+
+def camera_thread():
+
+    global frame
+
+    while running:
+
+        img = picam2.capture_array()
+
+        with lock:
+            frame = img
+
+
+thread = threading.Thread(target=camera_thread, daemon=True)
+thread.start()
+
+# =============================
+# FPS
+# =============================
+
+fps = 0
+counter = 0
+start = time.time()
+
+print("Pressione Q para sair.")
+
+# =============================
+# LOOP PRINCIPAL
+# =============================
 
 while True:
-    raw = pipe.stdout.read(WIDTH * HEIGHT * 3 // 2)
-    if not raw:
-        break
 
-    frame = np.frombuffer(raw, dtype=np.uint8).reshape((HEIGHT * 3 // 2, WIDTH))
-    frame = cv2.cvtColor(frame, cv2.COLOR_YUV2BGR_I420)
+    with lock:
 
-    # ===== YOLO DETECÇÃO =====
-    results = model(frame, imgsz=320, conf=0.5, verbose=False)
+        if frame is None:
+            continue
+
+        img = frame.copy()
+
+    # -----------------------------
+    # YOLO
+    # -----------------------------
+
+    results = model.predict(
+        img,
+        imgsz=IMGSZ,
+        conf=CONF,
+        verbose=False
+    )
 
     annotated = results[0].plot()
 
-    cv2.imshow("YOLO + Raspberry Cam", annotated)
+    # -----------------------------
+    # FPS
+    # -----------------------------
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    counter += 1
+
+    if time.time() - start >= 1:
+
+        fps = counter
+
+        counter = 0
+
+        start = time.time()
+
+    cv2.putText(
+        annotated,
+        f"FPS: {fps}",
+        (10,30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0,255,0),
+        2
+    )
+
+    cv2.imshow("YOLOv8 Raspberry", annotated)
+
+    if cv2.waitKey(1) == ord("q"):
         break
 
-pipe.terminate()
+# =============================
+# FINALIZA
+# =============================
+
+running = False
+
+thread.join()
+
+picam2.stop()
+
 cv2.destroyAllWindows()
